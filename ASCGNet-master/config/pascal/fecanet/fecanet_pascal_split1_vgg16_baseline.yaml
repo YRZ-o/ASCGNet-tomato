@@ -1,0 +1,92 @@
+# ==================================================
+# 番茄分割训练配置文件
+# 基于Pascal VOC配置修改适配
+# ==================================================
+
+# 数据配置 - 修改为番茄数据集路径
+DATA:
+  data_root: dataset/pascal/
+  train_list: lists/pascal/voc_sbd_merge_noduplicate.txt
+  val_list: lists/pascal/val.txt
+  classes: 2
+
+# 训练参数配置
+TRAIN:
+  # 模型架构 - 保持不变
+  vgg: True
+  layers: 50
+  sync_bn: False
+  ppm_scales: [60, 30, 15, 8]
+
+  # 输入尺寸 - 保持不变（兼容标准）
+  train_h: 473
+  train_w: 473
+  val_size: 473
+  zoom_factor: 8
+
+  # 数据增强优化（针对番茄图像特性调整）
+  scale_min: 0.7          # 调整：扩大缩放范围，适应不同大小番茄
+  scale_max: 1.5          # 调整：支持更大尺度变化
+  rotate_min: -15          # 调整：增加旋转范围，适应不同角度
+  rotate_max: 15          # 调整：增强数据多样性
+
+  # 标签处理 - 保持不变
+  ignore_label: 255
+  padding_label: 255
+  aux_weight: 1.0
+
+  # 设备配置 - 根据实际GPU调整
+  train_gpu: [6]          # 根据实际GPU ID调整
+  workers: 4              # 调整：根据CPU核心数优化
+
+  # 训练批次大小 - 根据GPU显存调整
+  batch_size: 4           # 可调整：如GPU显存小可改为2
+  batch_size_val: 1
+
+  # 学习率策略优化
+  base_lr: 0.001         # 调整：迁移学习使用较小学习率
+  epochs: 200             # 调整：迁移学习可减少轮数
+  start_epoch: 0
+  power: 0.9
+  momentum: 0.9
+  weight_decay: 0.0001
+
+  # 训练控制
+  manual_seed: 321
+  print_freq: 10          # 调整：增加打印频率便于监控
+  save_freq: 20
+  save_path: exp/fecanet/pascal/split1_vgg16/model
+
+  # 预训练权重配置
+  weight: exp/fecanet/pascal/split1_vgg16/model/train_epoch_172_0.608673288626659.pth
+  resume:                 # 初始训练保持为空
+
+  # 评估配置
+  evaluate: True
+  resized_val: True
+  ori_resize: True
+
+  # 数据集类型配置 - 关键修改
+  split: 1
+  shot: 1
+  use_coco: False
+  use_split_coco: False
+  use_tomato_list: False    # 修改：启用番茄数据集模式
+
+  # 高级训练配置
+  fix_random_seed_val: True
+  warmup: False
+
+# ==================================================
+# 分布式训练配置（单机训练保持默认）
+# ==================================================
+Distributed:
+  dist_url: tcp://127.0.0.1:6789
+  dist_backend: 'nccl'
+  multiprocessing_distributed: False
+  world_size: 1
+  rank: 0
+  use_apex: False
+  opt_level: 'O0'
+  keep_batchnorm_fp32:
+  loss_scale:
